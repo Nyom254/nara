@@ -24,16 +24,24 @@ bool led_timer_cb(struct repeating_timer *t) {
 
 int main() {
   stdio_init_all();
-  while(cyw43_arch_init()){
-    printf("failed to initialized\n");
+  
+
+  // initialize wifi
+  while(!wifi_init()) {
     sleep_ms(500);
   }
-  sleep_ms(1000);
-  printf("initialized\n");
-
-  
-  // wifi_init();
-  // wifi_send_sensor_data("Example sensor data", 20);
+  // keep trying to connect to wifi until successful
+  while(!connect_to_wifi());
+  // start lwip for http client
+  // cyw43_arch_lwip_begin();
+  json_payload_t payload = build_sensor_json(NULL);
+  // wifi_post_sensor_data(payload.json);
+  if(!wifi_send_sensor_data()) {
+    printf("Failed to send sensor data\n");
+  } else {
+    printf("Sensor data sent successfully\n");
+  }
+  // cyw43_arch_lwip_end();
 
   // sensor_pin_init();
   // sensor_data_t sensor_data;
@@ -70,6 +78,8 @@ int main() {
 
     lv_timer_handler();
     sleep_ms(5);
+
+    tight_loop_contents();
   }
 
   return 0;
