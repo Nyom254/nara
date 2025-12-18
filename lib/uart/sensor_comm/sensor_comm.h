@@ -1,3 +1,6 @@
+#ifndef SENSOR_COMM_H
+#define SENSOR_COMM_H
+
 typedef struct{
     float humidity;
     float temperature;
@@ -11,3 +14,4 @@ void sensor_pin_init();
 bool read_sensor_data(sensor_data_t* data);
 
 
+#endif
