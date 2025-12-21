@@ -21,13 +21,14 @@
 // MAX485 CONTROL PINS
 #define MAX485_DERE_PIN 22  // Data Enable Pin
 
-// TOTAL BYTES RECEIVED FROM SENSOR
-#define RECEIVED_DATA_SIZE 13
+// SENSOR INFORMATION 
+#define SENSOR_SLAVE_ADDRESS 0x05
+#define RECEIVED_DATA_SIZE 19
 
 // REQUEST DATA TO SENSOR LENGTH
 #define REQUEST_DATA_LEN 8
 
-#define RX_BUF_SIZE 13
+#define RX_BUF_SIZE 19  // Maximum size of RX buffer
 #define MODBUS_FRAME_GAP_US 4000   // ~3.5 char times @9600
 
 #define RX_TIMEOUT_MS 3000     // Total timeout for receiving data
@@ -40,12 +41,12 @@ static absolute_time_t rx_deadline;
 
 // REQUIRED SENSOR SENT DATA FORMAT
 uint8_t data_to_sensor[REQUEST_DATA_LEN] = {
-    0x03, // Slave Address 
+    0x05, // Slave Address 
     0x03, // Function Code
     0x00, // Starting Address High Byte
     0x00, // starting Address Low Byte
     0x00, // No. of Registers High Byte
-    0x04, // No. of Registers Low Byte
+    0x07, // No. of Registers Low Byte
     0x00, // CRC Low Byte (to be filled)
     0x00  // CRC High Byte (to be filled)
 };
@@ -94,17 +95,17 @@ void modbus_rx_poll(void) {
 
 // PARSE RECEIVED DATA FROM SENSOR
 bool parse_sensor_frame(sensor_data_t *data) {
-    if (rx_index != 13) return false;
-    if (rx_buffer[0] != 0x03 || rx_buffer[1] != 0x03 || rx_buffer[2] != 0x08) {
+    if (rx_index != RECEIVED_DATA_SIZE) return false;
+    if (rx_buffer[0] != SENSOR_SLAVE_ADDRESS || rx_buffer[1] != 0x03 || rx_buffer[2] != 0x0E) {
         printf("Invalid Function Code or Byte Count\n");
         return false;
     }
 
     uint16_t crc_rx =
-        rx_buffer[11] | (rx_buffer[12] << 8);
+        rx_buffer[17] | (rx_buffer[18] << 8);
 
     uint16_t crc_calc =
-        modbus_crc16(rx_buffer, 11);
+        modbus_crc16(rx_buffer, 17);
 
     if (crc_rx != crc_calc) {
         printf("CRC Mismatch: RX: %04X, CALC: %04X\n", crc_rx, crc_calc);
@@ -119,12 +120,19 @@ bool parse_sensor_frame(sensor_data_t *data) {
         (rx_buffer[7] << 8) | rx_buffer[8];
     uint16_t ph =
         (rx_buffer[9] << 8) | rx_buffer[10];
-
+    uint16_t nitrogen =
+        (rx_buffer[11] << 8) | rx_buffer[12];
+    uint16_t phosphorus =
+        (rx_buffer[13] << 8) | rx_buffer[14];
+    uint16_t potassium =
+        (rx_buffer[15] << 8) | rx_buffer[16];
     data->humidity     = hum / 10.0f;
     data->temperature  = temp / 10.0f;
     data->conductivity = cond;
     data->pH           = ph / 10.0f;
-
+    data->nitrogen     = nitrogen;
+    data->phosphorus   = phosphorus;
+    data->potassium    = potassium;
     return true;
 }
 

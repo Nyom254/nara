@@ -6,6 +6,9 @@ typedef struct{
     float temperature;
     float conductivity;
     float pH;
+    float nitrogen;
+    float phosphorus;
+    float potassium;
 } sensor_data_t;
 
 
