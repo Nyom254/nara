@@ -31,29 +31,27 @@ int main() {
     sleep_ms(500);
   }
   // keep trying to connect to wifi until successful
-  while(!connect_to_wifi());
+  // while(!connect_to_wifi());
   // start lwip for http client
-  // cyw43_arch_lwip_begin();
-  json_payload_t payload = build_sensor_json(NULL);
+  // json_payload_t payload = build_sensor_json(NULL);
   // wifi_post_sensor_data(payload.json);
-  if(!wifi_send_sensor_data()) {
-    printf("Failed to send sensor data\n");
-  } else {
-    printf("Sensor data sent successfully\n");
-  }
-  // cyw43_arch_lwip_end();
+  // if(!wifi_send_sensor_data()) {
+  //   printf("Failed to send sensor data\n");
+  // } else {
+  //   printf("Sensor data sent successfully\n");
+  // }
 
-  // sensor_pin_init();
-  // sensor_data_t sensor_data;
+  sensor_pin_init();
+  sensor_data_t sensor_data;
 
-  ili9488_init();
-  spi_dma_init();
-  lv_init();
-  static struct repeating_timer lvgl_timer;
-  add_repeating_timer_ms(1, lvgl_tick_cb, NULL, &lvgl_timer);
-  lv_port_disp_init();
+  // ili9488_init();
+  // spi_dma_init();
+  // lv_init();
+  // static struct repeating_timer lvgl_timer;
+  // add_repeating_timer_ms(1, lvgl_tick_cb, NULL, &lvgl_timer);
+  // lv_port_disp_init();
 
-  create_widgets();
+  // create_widgets();
 
   static struct repeating_timer led_timer;
   add_repeating_timer_ms(
@@ -66,17 +64,17 @@ int main() {
 
 
   while (true) {
-    // scanf("Press Enter to read sensor data...\n");
-    // if (read_sensor_data(&sensor_data)) {
-    //   printf("Humidity: %.2f %%\n", sensor_data.humidity);
-    //   printf("Temperature: %.2f °C\n", sensor_data.temperature);
-    //   printf("Conductivity: %u µS/cm\n", sensor_data.conductivity);
-    //   printf("pH: %.2f\n", sensor_data.pH);
-    // } else {
-    //   printf("Failed to read sensor data\n");
-    // }
+    scanf("Press Enter to read sensor data...\n");
+    if (read_sensor_data(&sensor_data)) {
+      printf("Humidity: %.2f %%\n", sensor_data.humidity);
+      printf("Temperature: %.2f °C\n", sensor_data.temperature);
+      printf("Conductivity: %u µS/cm\n", sensor_data.conductivity);
+      printf("pH: %.2f\n", sensor_data.pH);
+    } else {
+      printf("Failed to read sensor data\n");
+    }
 
-    lv_timer_handler();
+    // lv_timer_handler();
     sleep_ms(5);
 
     tight_loop_contents();

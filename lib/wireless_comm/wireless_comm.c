@@ -7,7 +7,7 @@
 #include "../uart/sensor_comm/sensor_comm.h"
 
 
-#define HOST "c8498509b5dd844af0af080068bfdce6.serveousercontent.com"
+#define HOST "cba198f2c471a123f9f4548305bb1075.serveousercontent.com"
 #define URL_REQUEST "/"
 
 
