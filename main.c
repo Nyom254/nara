@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+
+#include "lib/lvgl/lvgl.h"
+
 #include "lib/wireless_comm/wireless_comm.h"
 #include "lib/uart/sensor_comm/sensor_comm.h"
 #include "lib/spi/display_comm/display_comm.h"
-#include "lib/lvgl/lvgl.h"
-
+#include "lib/wireless_comm/mqtt/mqtt_client.h"
 
 #define HIGH 1
 #define LOW 0
@@ -26,24 +28,26 @@ int main() {
   stdio_init_all();
   
 
-  // initialize wifi
+  /*
+    Wifi Initialization
+  */
+  //  initialize wifi
   while(!wifi_init()) {
     sleep_ms(500);
   }
   // keep trying to connect to wifi until successful
-  // while(!connect_to_wifi());
-  // start lwip for http client
-  // json_payload_t payload = build_sensor_json(NULL);
-  // wifi_post_sensor_data(payload.json);
-  // if(!wifi_send_sensor_data()) {
-  //   printf("Failed to send sensor data\n");
-  // } else {
-  //   printf("Sensor data sent successfully\n");
-  // }
+  while(!connect_to_wifi());
 
+  /* 
+  Sensor initialization
+   */
   sensor_pin_init();
   sensor_data_t sensor_data;
-
+  
+  
+  /* 
+    Display initialization 
+  */
   // ili9488_init();
   // spi_dma_init();
   // lv_init();
@@ -52,6 +56,12 @@ int main() {
   // lv_port_disp_init();
 
   // create_widgets();
+
+  /*
+    MQTT Initialization
+  */
+  mqtt_init();
+
 
   static struct repeating_timer led_timer;
   add_repeating_timer_ms(
@@ -62,14 +72,21 @@ int main() {
   );
   
 
-
   while (true) {
+
+    // MQTT background task
+    mqtt_poll();
+
+
     scanf("Press Enter to read sensor data...\n");
     if (read_sensor_data(&sensor_data)) {
       printf("Humidity: %.2f %%\n", sensor_data.humidity);
       printf("Temperature: %.2f °C\n", sensor_data.temperature);
       printf("Conductivity: %u µS/cm\n", sensor_data.conductivity);
       printf("pH: %.2f\n", sensor_data.pH);
+      printf("Nitrogen: %.2f\n", sensor_data.nitrogen);
+      printf("Phosphorus: %.2f\n", sensor_data.phosphorus);
+      printf("Potassium: %.2f\n", sensor_data.potassium);
     } else {
       printf("Failed to read sensor data\n");
     }
