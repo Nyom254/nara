@@ -8,12 +8,8 @@ typedef struct {
     char json[128];
 } json_payload_t;
 
-bool wifi_init();
+bool ble_init();
 
-bool connect_to_wifi();
 json_payload_t build_sensor_data_json(sensor_data_t *d);
-
-
-
 
 #endif

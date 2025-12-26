@@ -76,9 +76,6 @@ void __isr dma_handler(void) {
     }
 }
 
-
-
-
 // ================= INIT =================
 void ili9488_reset(void) {
     gpio_put(TFT_RST, 0);
@@ -217,8 +214,6 @@ bool lvgl_tick_cb(struct repeating_timer *t) {
     lv_tick_inc(1);
     return true;
 }
-
-
 
 
 static void lvgl_flush_cb(
