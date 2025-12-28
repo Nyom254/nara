@@ -74,7 +74,10 @@ static void create_sensor_info(lv_obj_t * parent)
     */
     lv_obj_t * thcp = lv_obj_create(panel);
     lv_obj_set_width(thcp, LV_PCT(100));
-    // lv_obj_set_height(thcp, LV_PCT(70));
+    lv_obj_set_style_border_width(thcp, 0, 0);
+    lv_obj_set_style_outline_width(thcp, 0, 0);
+    lv_obj_set_style_shadow_width(thcp, 0, 0);
+
     lv_obj_set_layout(thcp, LV_LAYOUT_GRID);
     static lv_coord_t col_dsc[] = { LV_GRID_FR(2), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST };
     static lv_coord_t row_dsc[] = { LV_GRID_FR(2), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST };
@@ -121,7 +124,11 @@ static void create_sensor_info(lv_obj_t * parent)
 
     lv_obj_t * npk_cont = lv_obj_create(panel);
     lv_obj_set_width(npk_cont, LV_PCT(100));
-    lv_obj_set_height(npk_cont, LV_PCT(20));
+    lv_obj_set_height(npk_cont, LV_PCT(35));
+    lv_obj_set_style_border_width(npk_cont, 0, 0);
+    lv_obj_set_style_outline_width(npk_cont, 0, 0);
+    lv_obj_set_style_shadow_width(npk_cont, 0, 0);
+
 
     lv_obj_set_flex_flow(npk_cont, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(
@@ -132,9 +139,13 @@ static void create_sensor_info(lv_obj_t * parent)
     );
     lv_obj_set_style_pad_all(npk_cont, 0, 0);
     lv_obj_set_style_pad_gap(npk_cont, 0, 0);
+
     lv_obj_t * n_cont = lv_obj_create(npk_cont);
+    lv_obj_set_height(n_cont, LV_PCT(100));
+    lv_obj_clear_flag(n_cont, LV_OBJ_FLAG_SCROLLABLE);
     label_n = lv_label_create(n_cont);
-    lv_obj_set_style_height(label_n, LV_SIZE_CONTENT, 0);
+    lv_obj_center(label_n);
+    lv_obj_set_height(label_n, LV_PCT(100));
     lv_label_set_text(label_n, "N: --.- mg/L");
     lv_obj_set_style_text_font(
         label_n,
@@ -142,16 +153,22 @@ static void create_sensor_info(lv_obj_t * parent)
     );  
 
     lv_obj_t * p_cont = lv_obj_create(npk_cont);
+    lv_obj_set_height(p_cont, LV_PCT(100));
+    lv_obj_clear_flag(p_cont, LV_OBJ_FLAG_SCROLLABLE);
     label_p = lv_label_create(p_cont);
-    lv_obj_set_style_height(label_p, LV_SIZE_CONTENT, 0);
+    lv_obj_center(label_p);
+    lv_obj_set_height(label_p, LV_PCT(100));
     lv_label_set_text(label_p, "P: --.- mg/L");
     lv_obj_set_style_text_font(
         label_p,
         &lv_font_montserrat_16, 0
     );  
     lv_obj_t * k_cont = lv_obj_create(npk_cont);
+    lv_obj_set_height(k_cont, LV_PCT(100));
+    lv_obj_clear_flag(k_cont, LV_OBJ_FLAG_SCROLLABLE);
     label_k = lv_label_create(k_cont);
-    lv_obj_set_style_height(label_k, LV_SIZE_CONTENT, 0);
+    lv_obj_center(label_k);
+    lv_obj_set_height(label_k, LV_PCT(100));
     lv_label_set_text(label_k, "K: --.- mg/L");
     lv_obj_set_style_text_font(
         label_k,
@@ -241,7 +258,7 @@ void ui_update_wifi(bool connected)
 {
     lv_label_set_text(
         label_wifi,
-        connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE
+        connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE
     );
 }
 
