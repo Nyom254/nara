@@ -31,8 +31,8 @@ static lv_color_t lv_buf2[TFT_HOR_RES * LV_LINE_COUNT];
 #define TFT_RST       22
 
 // ================= DISPLAY CONFIG =================
-#define TFT_WIDTH   320
-#define TFT_HEIGHT  480
+#define TFT_WIDTH   480
+#define TFT_HEIGHT  320
 #define SPI_BAUDRATE 40000000  // 40 MHz (ILI9488 SPI max ~50MHz)
 
 // ================= LOW LEVEL =================
@@ -132,7 +132,7 @@ void ili9488_init(void) {
     tft_write_u8(0x80);
 
     tft_write_cmd(0x36); // Memory Access Control
-    tft_write_u8(0x28); // MX, RGB
+    tft_write_u8(0x20); // MX, RGB
 
     tft_write_cmd(0x3A); // Pixel format
     tft_write_u8(0x66); // RGB666
@@ -206,8 +206,6 @@ static void spi_dma_write_async(const uint8_t *data, size_t len) {
 }
 
 
-
-
 // ================= LVGL INTERFACE =================
 
 bool lvgl_tick_cb(struct repeating_timer *t) {
@@ -233,9 +231,6 @@ static void lvgl_flush_cb(
 
     spi_dma_write_async(px_map, w * h * 3);
 }
-
-
-
 
 void lv_port_disp_init(void) {
     lv_display_t * disp;
