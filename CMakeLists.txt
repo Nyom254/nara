@@ -18,6 +18,7 @@ add_executable(jinawi_kw
   lib/uart/sensor_comm/sensor_comm.c
   lib/spi/display_comm/display_comm.c
   lib/ui/ui.c
+  lib/sensor_data/sensor_data.c
 )
 
 pico_enable_stdio_usb(jinawi_kw 1)

@@ -3,28 +3,60 @@
 #include "../uart/sensor_comm/sensor_comm.h"
 #include "wireless_comm.h"
 #include "btstack.h"
-
+#include "../sensor_data/sensor_data.h"
 #include "ble.h"
 
 #define HEARTBEAT_PERIOD_MS 1000
 
 static btstack_timer_source_t heartbeat;
 static hci_con_handle_t con_handle = HCI_CON_HANDLE_INVALID;
-static uint8_t sensor_data = 8;
 static btstack_packet_callback_registration_t btstack_event_callback;
+
+static volatile bool ble_connected = false;
+static volatile bool ble_state_changed = false;
+
+typedef struct __attribute__((packed)) {
+    int16_t humidity_x10;      // 68.2% → 682
+    int16_t temperature_x10;   // 27.3°C → 273
+    uint16_t conductivity;    // µS/cm
+    int16_t ph_x100;           // 6.75 → 675
+    uint16_t nitrogen;
+    uint16_t phosphorus;
+    uint16_t potassium;
+} sensor_ble_packet_t;
+
+static void sensor_to_ble_packet(sensor_ble_packet_t *p,
+                                 const sensor_data_t *d) {
+    p->humidity_x10    = (int16_t)(d->humidity * 10);
+    p->temperature_x10 = (int16_t)(d->temperature * 10);
+    p->conductivity    = (uint16_t)d->conductivity;
+    p->ph_x100         = (int16_t)(d->pH * 100);
+    p->nitrogen        = (uint16_t)d->nitrogen;
+    p->phosphorus      = (uint16_t)d->phosphorus;
+    p->potassium       = (uint16_t)d->potassium;
+}
+
+
+
 
 // Advertising data
 static uint8_t adv_data[] = {
   // Flags: General Discoverable
   0x02, 0x01, 0x06,
-  // Name: Nara
-  0x05, 0x09, 'N', 'a','r', 'a'
+  // Name: nara
+  0x05, 0x09, 'n', 'a','r', 'a'
 };
 uint16_t att_read_callback(hci_con_handle_t con_handle,
                             uint16_t att_handle, uint16_t offset,
                             uint8_t * buffer, uint16_t buffer_size){
-    if(att_handle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE){
-        return att_read_callback_handle_blob((const uint8_t*)&sensor_data, 1, offset, buffer, buffer_size);
+    if(att_handle == ATT_CHARACTERISTIC_0887f28c_0000_40b5_9f88_a8bfd08a2aa6_01_VALUE_HANDLE){
+      sensor_data_t snapshot;
+      sensor_ble_packet_t pkt;
+      if (!sensor_data_get(&snapshot, NULL)) {
+          return 0; // no data yet
+      }
+      sensor_to_ble_packet(&pkt, &snapshot);
+      return att_read_callback_handle_blob((const uint8_t*)&pkt, sizeof(sensor_ble_packet_t), offset, buffer, buffer_size);
     }
     return 0;
 }
@@ -33,15 +65,12 @@ int att_write_callback(hci_con_handle_t con_handle,
                              uint16_t att_handle, uint16_t transaction_mode,
                              uint16_t offset, const uint8_t * buffer, uint16_t buffer_size){
     UNUSED(con_handle);
+    UNUSED(att_handle);
     UNUSED(transaction_mode);
     UNUSED(offset);
-    if(att_handle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE){
-        if(buffer_size == 1){
-            sensor_data = buffer[0];
-            printf("Received sensor data via BLE: %d\n", sensor_data);
-        }
-    }
-    return buffer_size;
+    UNUSED(buffer);
+    UNUSED(buffer_size);
+    return ATT_ERROR_WRITE_NOT_PERMITTED;
 }
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
@@ -59,6 +88,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
       }
       case HCI_EVENT_DISCONNECTION_COMPLETE:
         con_handle = HCI_CON_HANDLE_INVALID;
+        ble_connected = false;
+        ble_state_changed = true;
         printf("Disconnected Re-enabling advertising\n");
         gap_advertisements_enable(1);
         break;
@@ -66,6 +97,9 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
         switch (hci_event_le_meta_get_subevent_code(packet)) {
           case HCI_SUBEVENT_LE_CONNECTION_COMPLETE:
             con_handle = hci_subevent_le_connection_complete_get_connection_handle(packet);
+            ble_connected = true;
+            ble_state_changed = true;
+            gap_advertisements_enable(0);
             printf("Connected\n");
             break;
           default:
@@ -97,18 +131,16 @@ bool ble_init(){
   return true;
 }
 
-json_payload_t build_sensor_data_json(sensor_data_t *d) {
-  json_payload_t payload;
-  snprintf(payload.json, sizeof(payload.json),
-        "{"
-        "\"humidity\": %.2f,"
-        "\"temperature\": %.2f,"
-        "\"conductivity\": %.2f,"
-        "\"ph\": %.2f,"
-        "\"nitrogen\": %.2f,"
-        "\"phosphorus\": %.2f,"
-        "\"potassium\": %.2f"
-        "}"
-      , d->humidity, d->temperature, d->conductivity, d->pH, d->nitrogen, d->phosphorus, d->potassium);
-    return payload;
+bool ble_is_connected(void) {
+    return ble_connected;
 }
+
+bool ble_is_state_changed(void) {
+    if (ble_state_changed) {
+        ble_state_changed = false;
+        return true;
+    }
+    return false;
+}
+
+

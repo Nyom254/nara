@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
 #include "hardware/uart.h"
 #include "hardware/irq.h"
 #include "sensor_comm.h"
+#include "../sensor_data/sensor_data.h"
 
 #define GPIO_ON 1
 #define GPIO_OFF 0
@@ -36,7 +38,7 @@
 static volatile uint8_t rx_buffer[RX_BUF_SIZE];
 static volatile size_t rx_index = 0;
 static volatile bool frame_ready = false;
-static absolute_time_t rx_deadline;
+static volatile absolute_time_t rx_deadline;
 
 
 // REQUIRED SENSOR SENT DATA FORMAT
@@ -74,8 +76,6 @@ void send_data_to_sensor() {
     uint16_t crc = modbus_crc16(data_to_sensor, sizeof(data_to_sensor) - 2);
     data_to_sensor[6] = crc & 0xFF;         // CRC Low Byte
     data_to_sensor[7] = (crc >> 8) & 0xFF;      // CRC High Byte
-
-    sleep_ms(500); // Wait before sending
 
     gpio_put(MAX485_DERE_PIN, 1);
     uart_write_blocking(UART_ID, data_to_sensor, REQUEST_DATA_LEN);
@@ -137,10 +137,6 @@ bool parse_sensor_frame(sensor_data_t *data) {
 }
 
 
-
-static int chars_rxed = 0;
-
-
 void print_hex_array(const uint8_t *data, size_t size) {
     
     // 1. Iterate through the array
@@ -162,6 +158,8 @@ void on_uart_rx(void) {
         uint8_t ch = uart_getc(UART_ID);
         if (rx_index < RX_BUF_SIZE) {
             rx_buffer[rx_index++] = ch;
+        } else{
+            frame_ready = true; // buffer overflow, end frame
         }
         rx_deadline = make_timeout_time_us(MODBUS_FRAME_GAP_US);
     }
@@ -177,7 +175,7 @@ void sensor_pin_init() {
     // uart config
     uart_set_hw_flow(UART_ID, false, false);
     uart_set_format(UART_ID, 8, 1, UART_PARITY_NONE);
-    uart_set_fifo_enabled(UART_ID, false);
+    uart_set_fifo_enabled(UART_ID, true);
     // uart rx irq handler 
     irq_set_exclusive_handler(UART0_IRQ, on_uart_rx);
     irq_set_enabled(UART0_IRQ, true);
@@ -190,9 +188,10 @@ void sensor_pin_init() {
 
 
 bool read_sensor_data(sensor_data_t* data) {
+    uart_set_irq_enables(UART_ID, false, false);
     rx_index = 0;
     frame_ready = false;
-
+    uart_set_irq_enables(UART_ID, true, false);
     send_data_to_sensor(); // Send request to sensor
 
     absolute_time_t deadline = make_timeout_time_ms(RX_TIMEOUT_MS);
@@ -209,4 +208,29 @@ bool read_sensor_data(sensor_data_t* data) {
     }
     printf("Timeout waiting for sensor data\n");
     return false; // timeout
+}
+
+
+void sensor_task_core1(void) {
+    sensor_data_t temp;
+
+    while (true) {
+        if (read_sensor_data(&temp)) {
+            printf("Humidity: %.2f %%\n", temp.humidity);
+            printf("Temperature: %.2f °C\n", temp.temperature);
+            printf("Conductivity: %u µS/cm\n", temp.conductivity);
+            printf("pH: %.2f\n", temp.pH);
+            printf("Nitrogen: %.2f\n", temp.nitrogen);
+            printf("Phosphorus: %.2f\n", temp.phosphorus);
+            printf("Potassium: %.2f\n", temp.potassium);
+            sensor_data_set(&temp); // mutex-protected shared store
+        } else {
+            printf("Failed to read sensor data\n");
+        }
+        sleep_ms(1000);
+    }
+}
+
+void start_read_sensor_core1_task() {
+    multicore_launch_core1(sensor_task_core1);
 }

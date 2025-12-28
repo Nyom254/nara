@@ -1,6 +1,6 @@
 #pragma once
 #include "lib/lvgl/lvgl.h"
-#include "lib/uart/sensor_comm/sensor_comm.h"
+#include "lib/sensor_data/sensor_data.h"
 /* UI lifecycle */
 void ui_init(void);
 

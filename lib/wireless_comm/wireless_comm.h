@@ -2,14 +2,11 @@
 
 #define WIRELESS_COMM_H
 
-#include "../uart/sensor_comm/sensor_comm.h"
-
-typedef struct {
-    char json[128];
-} json_payload_t;
+#include "../sensor_data/sensor_data.h"
 
 bool ble_init();
+bool ble_is_connected();
+bool ble_is_state_changed();
 
-json_payload_t build_sensor_data_json(sensor_data_t *d);
 
 #endif
