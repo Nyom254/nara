@@ -160,6 +160,7 @@ void on_uart_rx(void) {
             rx_buffer[rx_index++] = ch;
         } else{
             frame_ready = true; // buffer overflow, end frame
+            rx_index = RX_BUF_SIZE;
         }
         rx_deadline = make_timeout_time_us(MODBUS_FRAME_GAP_US);
     }
@@ -175,7 +176,7 @@ void sensor_pin_init() {
     // uart config
     uart_set_hw_flow(UART_ID, false, false);
     uart_set_format(UART_ID, 8, 1, UART_PARITY_NONE);
-    uart_set_fifo_enabled(UART_ID, true);
+    uart_set_fifo_enabled(UART_ID, false);
     // uart rx irq handler 
     irq_set_exclusive_handler(UART0_IRQ, on_uart_rx);
     irq_set_enabled(UART0_IRQ, true);
@@ -189,8 +190,11 @@ void sensor_pin_init() {
 
 bool read_sensor_data(sensor_data_t* data) {
     uart_set_irq_enables(UART_ID, false, false);
+    uint32_t flags = save_and_disable_interrupts();
     rx_index = 0;
     frame_ready = false;
+    rx_deadline = make_timeout_time_us(MODBUS_FRAME_GAP_US);
+    restore_interrupts(flags);
     uart_set_irq_enables(UART_ID, true, false);
     send_data_to_sensor(); // Send request to sensor
 
