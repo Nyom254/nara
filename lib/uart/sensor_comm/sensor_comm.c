@@ -16,12 +16,12 @@
 #define STOP_BITS 1
 #define PARITY    UART_PARITY_NONE
 
-#define UART_TX_PIN 16
-#define UART_RX_PIN 17
+#define UART_TX_PIN 12
+#define UART_RX_PIN 13
 
 
 // MAX485 CONTROL PINS
-#define MAX485_DERE_PIN 22  // Data Enable Pin
+#define MAX485_DERE_PIN 11  // Data Enable Pin
 
 // SENSOR INFORMATION 
 #define SENSOR_SLAVE_ADDRESS 0x05

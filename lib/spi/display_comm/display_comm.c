@@ -28,7 +28,7 @@ static lv_color_t lv_buf2[TFT_HOR_RES * LV_LINE_COUNT];
 #define TFT_MOSI      19
 #define TFT_CS        20
 #define TFT_DC        21
-#define TFT_RST       26
+#define TFT_RST       22
 
 // ================= DISPLAY CONFIG =================
 #define TFT_WIDTH   320
