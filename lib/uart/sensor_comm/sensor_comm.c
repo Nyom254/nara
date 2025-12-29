@@ -40,7 +40,6 @@ static volatile size_t rx_index = 0;
 static volatile bool frame_ready = false;
 static volatile absolute_time_t rx_deadline;
 
-
 // REQUIRED SENSOR SENT DATA FORMAT
 uint8_t data_to_sensor[REQUEST_DATA_LEN] = {
     0x05, // Slave Address 
@@ -189,13 +188,9 @@ void sensor_pin_init() {
 
 
 bool read_sensor_data(sensor_data_t* data) {
-    uart_set_irq_enables(UART_ID, false, false);
-    uint32_t flags = save_and_disable_interrupts();
     rx_index = 0;
     frame_ready = false;
-    rx_deadline = make_timeout_time_us(MODBUS_FRAME_GAP_US);
-    restore_interrupts(flags);
-    uart_set_irq_enables(UART_ID, true, false);
+    sleep_ms(100); // Wait before sending request
     send_data_to_sensor(); // Send request to sensor
 
     absolute_time_t deadline = make_timeout_time_ms(RX_TIMEOUT_MS);
@@ -215,26 +210,14 @@ bool read_sensor_data(sensor_data_t* data) {
 }
 
 
-void sensor_task_core1(void) {
-    sensor_data_t temp;
+void sensor_task(void) {
+    static absolute_time_t last = {0};
 
-    while (true) {
+    if (absolute_time_diff_us(last, get_absolute_time()) > 1e6) {
+        last = get_absolute_time();
+        sensor_data_t temp;
         if (read_sensor_data(&temp)) {
-            printf("Humidity: %.2f %%\n", temp.humidity);
-            printf("Temperature: %.2f °C\n", temp.temperature);
-            printf("Conductivity: %u µS/cm\n", temp.conductivity);
-            printf("pH: %.2f\n", temp.pH);
-            printf("Nitrogen: %.2f\n", temp.nitrogen);
-            printf("Phosphorus: %.2f\n", temp.phosphorus);
-            printf("Potassium: %.2f\n", temp.potassium);
-            sensor_data_set(&temp); // mutex-protected shared store
-        } else {
-            printf("Failed to read sensor data\n");
+            sensor_data_set(&temp);
         }
-        sleep_ms(1000);
     }
-}
-
-void start_read_sensor_core1_task() {
-    multicore_launch_core1(sensor_task_core1);
 }
