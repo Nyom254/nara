@@ -37,8 +37,6 @@ static void sensor_to_ble_packet(sensor_ble_packet_t *p,
 }
 
 
-
-
 // Advertising data
 static uint8_t adv_data[] = {
   // Flags: General Discoverable

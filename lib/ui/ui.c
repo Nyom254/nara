@@ -43,7 +43,7 @@ static void create_status_bar(lv_obj_t * parent)
         &lv_font_montserrat_20,
         0
     );
-    lv_label_set_text(label_wifi, LV_SYMBOL_WIFI);
+    lv_label_set_text(label_wifi, LV_SYMBOL_CLOSE);
 
     /* BATTERY ICON */
     label_battery = lv_label_create(bar);
@@ -254,7 +254,7 @@ void ui_update_battery(uint8_t percent)
 }
 
 
-void ui_update_wifi(bool connected)
+void ui_update_bl(bool connected)
 {
     lv_label_set_text(
         label_wifi,

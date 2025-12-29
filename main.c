@@ -66,7 +66,6 @@ int main() {
   ui_init();
   sensor_data_t ui_data;
   uint32_t last_data_seq = 0;
-  ui_update_wifi(true);
   ui_update_battery(76);
 
   /* 
@@ -77,10 +76,13 @@ int main() {
     if (sensor_data_get(&ui_data, &last_data_seq)) {
         ui_update_sensor(&ui_data);
     }
+    if (ble_is_state_changed()) {
+        ui_update_bl(ble_is_connected());
+    }
     sensor_task();
     lv_timer_handler();
     cyw43_poll();
-    sleep_ms(5);
+    sleep_ms(10);
     tight_loop_contents();
   }
 

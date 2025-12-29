@@ -3,7 +3,6 @@
 
 void sensor_pin_init();
 
-void start_read_sensor_core1_task();
 void sensor_task();
 
 #endif
