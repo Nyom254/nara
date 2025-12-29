@@ -35,7 +35,6 @@ int main() {
     initialize mutex  shared sensor data
   */
   sensor_data_shared_init();
-
   /*
     Bluetooth Initialization
   */
@@ -44,11 +43,7 @@ int main() {
     return -1;
   }
 
-  /* 
-  Sensor initialization
-   */
-  sensor_pin_init();
-  // start_read_sensor_core1_task();
+  
   /* 
     Display initialization 
   */
@@ -66,27 +61,23 @@ int main() {
     NULL, 
     &led_timer
   );
+
+
   ui_init();
-  sensor_data_t dat_dummy = {
-      .humidity = 50.0f,
-      .temperature = 25.0f,
-      .conductivity = 500.0f,
-      .pH = 6.5f,
-      .nitrogen = 10.0f,
-      .phosphorus = 5.0f,
-      .potassium = 8.0f
-  };
   sensor_data_t ui_data;
   uint32_t last_data_seq = 0;
   ui_update_wifi(true);
   ui_update_battery(76);
-  sensor_data_set(&dat_dummy);
 
+  /* 
+  Sensor initialization
+  */
+  sensor_pin_init();
   while (true) {
     if (sensor_data_get(&ui_data, &last_data_seq)) {
         ui_update_sensor(&ui_data);
     }
-
+    sensor_task();
     lv_timer_handler();
     cyw43_poll();
     sleep_ms(5);
